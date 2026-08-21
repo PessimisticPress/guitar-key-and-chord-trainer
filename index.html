@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>Guitar Key & Chord Trainer</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a2b;
+      --panel-2: #172033;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --accent-2: #93c5fd;
+      --good: #34d399;
+      --bad: #f87171;
+      --border: #263247;
+      --button: #1f2937;
+      --button-hover: #2b3648;
+      --shadow: 0 10px 30px rgba(0,0,0,.22);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, select {
+      font: inherit;
+      min-height: 46px;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--button);
+      color: var(--text);
+      padding: 12px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active { transform: translateY(1px); }
+    button:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(96,165,250,.45);
+      outline-offset: 2px;
+    }
+
+    .app {
+      width: min(100%, 900px);
+      margin: 0 auto;
+      padding: 18px 14px 34px;
+    }
+
+    header {
+      padding: 6px 4px 14px;
+    }
+
+    h1 {
+      font-size: clamp(1.7rem, 7vw, 2.5rem);
+      line-height: 1.05;
+      margin: 0 0 8px;
+      letter-spacing: -.03em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.45;
+      max-width: 680px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .panel {
+      background: rgba(18,26,43,.95);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      font-size: .9rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0f172a;
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .stat {
+      padding: 12px 8px;
+      text-align: center;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 2px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .trainer {
+      margin-top: 14px;
+      padding: 18px;
+    }
+
+    .mode-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--accent-2);
+      background: rgba(96,165,250,.08);
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .prompt {
+      margin: 18px 0 10px;
+      font-size: clamp(1.35rem, 5.5vw, 2rem);
+      line-height: 1.25;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    .subprompt {
+      color: var(--muted);
+      margin: 0 0 18px;
+      line-height: 1.4;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .answer-btn {
+      background: #182235;
+      font-weight: 800;
+      min-height: 58px;
+      font-size: 1rem;
+    }
+
+    .answer-btn:hover {
+      background: var(--button-hover);
+    }
+
+    .answer-btn.correct {
+      border-color: rgba(52,211,153,.8);
+      background: rgba(52,211,153,.18);
+      color: #d1fae5;
+    }
+
+    .answer-btn.incorrect {
+      border-color: rgba(248,113,113,.8);
+      background: rgba(248,113,113,.16);
+      color: #fee2e2;
+    }
+
+    .answer-btn:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .feedback {
+      min-height: 58px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+    }
+
+    .feedback.good {
+      color: #d1fae5;
+      border-color: rgba(52,211,153,.45);
+      background: rgba(52,211,153,.08);
+    }
+
+    .feedback.bad {
+      color: #fee2e2;
+      border-color: rgba(248,113,113,.45);
+      background: rgba(248,113,113,.07);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary {
+      border-color: rgba(96,165,250,.55);
+      background: #1d4ed8;
+    }
+
+    .primary:hover { background: #2563eb; }
+
+    .ghost {
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .reference {
+      margin-top: 14px;
+      overflow: hidden;
+    }
+
+    .reference summary {
+      cursor: pointer;
+      padding: 16px 18px;
+      font-weight: 800;
+      list-style: none;
+    }
+
+    .reference summary::-webkit-details-marker { display: none; }
+
+    .reference-content {
+      border-top: 1px solid var(--border);
+      padding: 14px 16px 18px;
+    }
+
+    .major-pattern {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(68px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .degree {
+      min-width: 68px;
+      padding: 10px 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .degree strong { display: block; }
+    .degree span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .footer {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    @media (min-width: 700px) {
+      .topbar {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+      }
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+      .answers {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Guitar Key & Chord Trainer</h1>
+      <p class="subtitle">
+        Learn which chords belong to a key, recognize likely keys from chord progressions,
+        and connect chords to Roman numerals.
+      </p>
+
+      <div class="topbar">
+        <section class="panel controls" aria-label="Trainer settings">
+          <div class="control-row">
+            <label for="mode">Practice mode</label>
+            <select id="mode">
+              <option value="keyToChord">Key → Chord</option>
+              <option value="chordToKey">Chord Progression → Key</option>
+              <option value="roman">Chord → Roman Numeral</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <label for="keyFilter">Key set</label>
+            <select id="keyFilter">
+              <option value="common">Common guitar keys</option>
+              <option value="all">All 12 major keys</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="panel stats" aria-label="Session stats">
+          <div class="stat">
+            <strong id="score">0</strong>
+            <span>Correct</span>
+          </div>
+          <div class="stat">
+            <strong id="streak">0</strong>
+            <span>Streak</span>
+          </div>
+          <div class="stat">
+            <strong id="accuracy">—</strong>
+            <span>Accuracy</span>
+          </div>
+        </section>
+      </div>
+    </header>
+
+    <section class="panel trainer">
+      <div id="modeLabel" class="mode-label">Key → Chord</div>
+      <div id="prompt" class="prompt">Loading question…</div>
+      <p id="subprompt" class="subprompt"></p>
+
+      <div id="answers" class="answers" aria-label="Answer choices"></div>
+
+      <div id="feedback" class="feedback" aria-live="polite">
+        Choose the best answer.
+      </div>
+
+      <div class="actions">
+        <button id="nextBtn" class="primary" type="button" disabled>Next Question</button>
+        <button id="resetStatsBtn" class="ghost" type="button">Reset Stats</button>
+      </div>
+    </section>
+
+    <details class="panel reference">
+      <summary>Major-key chord pattern reference</summary>
+      <div class="reference-content">
+        <div class="major-pattern" aria-label="Major key chord pattern">
+          <div class="degree"><strong>I</strong><span>Major</span></div>
+          <div class="degree"><strong>ii</strong><span>minor</span></div>
+          <div class="degree"><strong>iii</strong><span>minor</span></div>
+          <div class="degree"><strong>IV</strong><span>Major</span></div>
+          <div class="degree"><strong>V</strong><span>Major</span></div>
+          <div class="degree"><strong>vi</strong><span>minor</span></div>
+          <div class="degree"><strong>vii°</strong><span>diminished</span></div>
+        </div>
+      </div>
+    </details>
+
+    <p class="footer">
+      Version 0.1 — all logic and stats are stored locally in this browser.
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      const keyData = {
+        C:  ["C","Dm","Em","F","G","Am","Bdim"],
+        "C♯":["C♯","D♯m","E♯m","F♯","G♯","A♯m","B♯dim"],
+        D:  ["D","Em","F♯m","G","A","Bm","C♯dim"],
+        "E♭":["E♭","Fm","Gm","A♭","B♭","Cm","Ddim"],
+        E:  ["E","F♯m","G♯m","A","B","C♯m","D♯dim"],
+        F:  ["F","Gm","Am","B♭","C","Dm","Edim"],
+        "F♯":["F♯","G♯m","A♯m","B","C♯","D♯m","E♯dim"],
+        G:  ["G","Am","Bm","C","D","Em","F♯dim"],
+        "A♭":["A♭","B♭m","Cm","D♭","E♭","Fm","Gdim"],
+        A:  ["A","Bm","C♯m","D","E","F♯m","G♯dim"],
+        "B♭":["B♭","Cm","Dm","E♭","F","Gm","Adim"],
+        B:  ["B","C♯m","D♯m","E","F♯","G♯m","A♯dim"]
+      };
+
+      const commonKeys = ["C","D","E","F","G","A"];
+      const roman = ["I","ii","iii","IV","V","vi","vii°"];
+
+      const commonProgressions = [
+        [0,4,5,3], // I V vi IV
+        [0,5,3,4], // I vi IV V
+        [0,3,4,0], // I IV V I
+        [5,3,0,4], // vi IV I V
+        [0,3,5,4], // I IV vi V
+        [0,4,3,4], // I V IV V
+        [1,4,0,0], // ii V I I
+        [0,2,3,4]  // I iii IV V
+      ];
+
+      const modeSelect = document.getElementById("mode");
+      const keyFilter = document.getElementById("keyFilter");
+      const modeLabel = document.getElementById("modeLabel");
+      const promptEl = document.getElementById("prompt");
+      const subpromptEl = document.getElementById("subprompt");
+      const answersEl = document.getElementById("answers");
+      const feedbackEl = document.getElementById("feedback");
+      const nextBtn = document.getElementById("nextBtn");
+      const resetStatsBtn = document.getElementById("resetStatsBtn");
+      const scoreEl = document.getElementById("score");
+      const streakEl = document.getElementById("streak");
+      const accuracyEl = document.getElementById("accuracy");
+
+      let current = null;
+      let answered = false;
+      let stats = loadStats();
+
+      function loadStats() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("gkctStats") || "{}");
+          return {
+            correct: Number(saved.correct) || 0,
+            total: Number(saved.total) || 0,
+            streak: Number(saved.streak) || 0
+          };
+        } catch {
+          return { correct: 0, total: 0, streak: 0 };
+        }
+      }
+
+      function saveStats() {
+        localStorage.setItem("gkctStats", JSON.stringify(stats));
+      }
+
+      function updateStatsUI() {
+        scoreEl.textContent = stats.correct;
+        streakEl.textContent = stats.streak;
+        accuracyEl.textContent = stats.total
+          ? Math.round((stats.correct / stats.total) * 100) + "%"
+          : "—";
+      }
+
+      function activeKeys() {
+        return keyFilter.value === "common" ? commonKeys : Object.keys(keyData);
+      }
+
+      function randomItem(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function shuffle(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function uniqueChoices(correct, pool, count = 4) {
+        const others = shuffle(pool.filter(x => x !== correct));
+        return shuffle([correct, ...others.slice(0, count - 1)]);
+      }
+
+      function generateQuestion() {
+        answered = false;
+        nextBtn.disabled = true;
+        feedbackEl.className = "feedback";
+        feedbackEl.textContent = "Choose the best answer.";
+        answersEl.innerHTML = "";
+
+        const mode = modeSelect.value;
+        const keys = activeKeys();
+        const key = randomItem(keys);
+
+        if (mode === "keyToChord") {
+          const degreeIndex = Math.floor(Math.random() * 7);
+          const correct = keyData[key][degreeIndex];
+          const chordPool = [...new Set(keys.flatMap(k => keyData[k]))];
+
+          current = {
+            mode,
+            correct,
+            explanation: `${correct} is the ${roman[degreeIndex]} chord in ${key} major.`
+          };
+
+          modeLabel.textContent = "Key → Chord";
+          promptEl.textContent = `Which chord is ${roman[degreeIndex]} in ${key} major?`;
+          subpromptEl.textContent = "Pick the diatonic chord that belongs in that scale degree.";
+          renderAnswers(uniqueChoices(correct, chordPool));
+        }
+
+        if (mode === "chordToKey") {
+          const progression = randomItem(commonProgressions);
+          const chords = progression.map(i => keyData[key][i]);
+          const correct = key;
+
+          current = {
+            mode,
+            correct,
+            explanation: `${chords.join(" – ")} maps to ${progression.map(i => roman[i]).join(" – ")} in ${key} major.`
+          };
+
+          modeLabel.textContent = "Progression → Key";
+          promptEl.textContent = chords.join(" – ");
+          subpromptEl.textContent = "What is the most likely major key for this progression?";
+          renderAnswers(uniqueChoices(correct, keys));
+        }
+
+        if (mode === "roman") {
+          const degreeIndex = Math.floor(Math.random() * 7);
+          const chord = keyData[key][degreeIndex];
+          const correct = roman[degreeIndex];
+
+          current = {
+            mode,
+            correct,
+            explanation: `${chord} is ${correct} in the key of ${key} major.`
+          };
+
+          modeLabel.textContent = "Chord → Roman Numeral";
+          promptEl.textContent = `In ${key} major, what number is ${chord}?`;
+          subpromptEl.textContent = "Think in scale degrees, not just chord names.";
+          renderAnswers(uniqueChoices(correct, roman));
+        }
+      }
+
+      function renderAnswers(choices) {
+        choices.forEach(choice => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "answer-btn";
+          btn.textContent = choice;
+          btn.addEventListener("click", () => handleAnswer(choice, btn));
+          answersEl.appendChild(btn);
+        });
+      }
+
+      function handleAnswer(choice, clickedButton) {
+        if (answered || !current) return;
+        answered = true;
+
+        const isCorrect = choice === current.correct;
+        stats.total += 1;
+
+        if (isCorrect) {
+          stats.correct += 1;
+          stats.streak += 1;
+          clickedButton.classList.add("correct");
+          feedbackEl.className = "feedback good";
+          feedbackEl.textContent = `Correct. ${current.explanation}`;
+        } else {
+          stats.streak = 0;
+          clickedButton.classList.add("incorrect");
+
+          [...answersEl.querySelectorAll("button")].forEach(btn => {
+            if (btn.textContent === current.correct) btn.classList.add("correct");
+          });
+
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = `Not quite. ${current.explanation}`;
+        }
+
+        [...answersEl.querySelectorAll("button")].forEach(btn => {
+          btn.disabled = true;
+        });
+
+        saveStats();
+        updateStatsUI();
+        nextBtn.disabled = false;
+      }
+
+      nextBtn.addEventListener("click", generateQuestion);
+
+      modeSelect.addEventListener("change", generateQuestion);
+      keyFilter.addEventListener("change", generateQuestion);
+
+      resetStatsBtn.addEventListener("click", () => {
+        const ok = window.confirm("Reset all saved trainer stats?");
+        if (!ok) return;
+        stats = { correct: 0, total: 0, streak: 0 };
+        saveStats();
+        updateStatsUI();
+        feedbackEl.className = "feedback";
+        feedbackEl.textContent = "Stats reset.";
+      });
+
+      updateStatsUI();
+      generateQuestion();
+    })();
+  </script>
+</body>
+</html>
