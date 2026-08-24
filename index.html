@@ -72,7 +72,7 @@
   <div id="whyBox" class="why"></div>
 </div>
 </section>
-<p class="footer">Version 2.2 — clearer practice context and Safari-safe quiz prompts.</p>
+<p class="footer">Version 2.3 — smarter near-miss quiz answers.</p>
 </main>
 <script>
 (()=>{
@@ -139,6 +139,63 @@ const shuffle=a=>{
 const opts=(correct,pool)=>shuffle([correct,...shuffle([...new Set(pool)].filter(x=>x!==correct)).slice(0,3)]);
 const keys=()=>keyFilterSelect.value==="common"?common:Object.keys(keyData);
 
+function splitChord(chord){
+  const m=String(chord).match(/^([A-G](?:♯|♭)?)(m|dim)?$/);
+  return m ? {root:m[1],quality:m[2]||"major"} : {root:String(chord),quality:"major"};
+}
+
+function chordName(root,quality){
+  if(quality==="minor") return root+"m";
+  if(quality==="dim") return root+"dim";
+  return root;
+}
+
+function smartChordChoices(correct,pool){
+  const parsed=splitChord(correct);
+  const candidates=[];
+  ["major","minor","dim"].forEach(q=>{
+    const c=chordName(parsed.root,q);
+    if(c!==correct) candidates.push(c);
+  });
+  const sameQuality=[...new Set(pool)].filter(c=>{
+    if(c===correct) return false;
+    return splitChord(c).quality===parsed.quality;
+  });
+  candidates.push(...shuffle(sameQuality));
+  candidates.push(...shuffle([...new Set(pool)].filter(c=>c!==correct)));
+  const unique=[...new Set(candidates)].filter(c=>c!==correct);
+  return shuffle([correct,...unique.slice(0,3)]);
+}
+
+function smartRomanChoices(correct){
+  const i=roman.indexOf(correct);
+  const preferred=[];
+  [i-1,i+1,i-2,i+2].forEach(j=>{if(j>=0&&j<roman.length) preferred.push(roman[j]);});
+  preferred.push(...roman.filter(r=>r!==correct));
+  return shuffle([correct,...[...new Set(preferred)].filter(r=>r!==correct).slice(0,3)]);
+}
+
+function noteParts(note){
+  const m=String(note).match(/^([A-G])(♯|♭)?$/);
+  return m ? {letter:m[1],accidental:m[2]||""} : {letter:String(note),accidental:""};
+}
+
+function smartNoteChoices(correct,pool){
+  const p=noteParts(correct);
+  const sameLetter=[p.letter,p.letter+"♯",p.letter+"♭"].filter(n=>n!==correct);
+  const otherReal=shuffle([...new Set(pool)].filter(n=>n!==correct&&noteParts(n).letter!==p.letter));
+  return shuffle([correct,...[...new Set([...sameLetter,...otherReal])].slice(0,3)]);
+}
+
+function smartRelativeMinorChoices(correct,key){
+  const parsed=splitChord(correct);
+  const choices=[];
+  choices.push(parsed.root);
+  keyData[key].c.forEach(c=>{if(c!==correct&&splitChord(c).quality==="minor") choices.push(c);});
+  keys().forEach(k=>{const c=keyData[k].c[5];if(c!==correct) choices.push(c);});
+  return shuffle([correct,...[...new Set(choices)].filter(c=>c!==correct).slice(0,3)]);
+}
+
 function renderAnswers(arr){
   answerChoicesEl.innerHTML="";
   arr.forEach(x=>{
@@ -189,7 +246,7 @@ function generate(){
       prompt:`Which chord is the ${roman[i]} chord?`,
       hint:`${roman[i]} means scale degree ${i+1}. Choose the chord built from that position in the key.`
     });
-    renderAnswers(opts(correct,Object.values(keyData).flatMap(x=>x.c)));
+    renderAnswers(smartChordChoices(correct,Object.values(keyData).flatMap(x=>x.c)));
 
   }else if(m==="chordToKey"){
     p=rand(progs).d;
@@ -224,7 +281,7 @@ function generate(){
       prompt:`What Roman numeral represents ${ch}?`,
       hint:"The Roman numeral tells you which scale degree the chord is built from."
     });
-    renderAnswers(opts(correct,roman));
+    renderAnswers(smartRomanChoices(correct));
 
   }else if(m==="relativeMinor"){
     correct=d.c[5];
@@ -240,7 +297,7 @@ function generate(){
       prompt:"What is this key's relative minor?",
       hint:"The relative minor is the vi chord — the chord built from scale degree 6."
     });
-    renderAnswers(opts(correct,ks.map(x=>keyData[x].c[5])));
+    renderAnswers(smartRelativeMinorChoices(correct,k));
 
   }else if(m==="missingScale"){
     i=Math.floor(Math.random()*7);
@@ -258,15 +315,15 @@ function generate(){
       prompt:shown,
       hint:"Which note belongs in the blank?"
     });
-    renderAnswers(opts(correct,Object.values(keyData).flatMap(x=>x.s)));
+    renderAnswers(smartNoteChoices(correct,Object.values(keyData).flatMap(x=>x.s)));
 
   }else{
     i=rand([0,3,4,5]);
     const labels={
-      0:"Home / tonic",
-      3:"Moves away from home / IV",
-      4:"Strong tension / dominant",
-      5:"Relative minor"
+      0:"Home / most settled",
+      3:"Moves away from home",
+      4:"Creates strong tension toward home",
+      5:"Relative-minor sound"
     };
     correct=labels[i];
     ch=d.c[i];
